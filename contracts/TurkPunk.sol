@@ -16,7 +16,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
     Counters.Counter public supplyCounter;
     
     mapping (uint256 => string) private assets;
-    mapping(address => uint256[]) public tokensByAddress;
+    mapping (address => uint256[]) private tokensByAddress;
 
     uint256 public mintPrice = 1 ether;
     
@@ -49,7 +49,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         supplyCounter.increment();
     }
     
-    function addMultipleAssets(string[] calldata assetURLs) external onlyOwner onlyNotOpen nonReentrant {
+    function addMultipleAssets(string[] memory assetURLs) external onlyOwner onlyNotOpen nonReentrant {
         for (uint256 i = 0; i < assetURLs.length; i++) {
             string memory assetURL = assetURLs[i];
             assets[supplyCounter.current()] = assetURL;
@@ -74,8 +74,9 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
     
     
-    function getTokenByAddress(address _address) external view returns (uint256[] memory) {
-        return tokensByAddress[_address];
+    function getTokenByAddress(address _address) external view returns (   uint256[] memory  ) {
+        uint256[] storage tokens = tokensByAddress[_address];
+        return tokens;
     }
     
     function addPayee(address wallet, string memory role, uint256 percentage) internal onlyNotOpen onlyOwner nonReentrant {
@@ -83,7 +84,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         payees.push(payee);
     }
     
-    function getBalance() public view returns(uint) {
+    function getBalance() public view returns(uint256) {
         return address(this).balance;
     }
 
