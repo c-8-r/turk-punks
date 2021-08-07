@@ -96,6 +96,12 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         }
     }
     
+    function transferPunk(address to, uint256 tokenId) external nonReentrant {
+        require(super.ownerOf(tokenId) == msg.sender, "this punk is not yours");
+        super.approve(to, tokenId);
+        super.transferFrom(msg.sender, to, tokenId);
+    }
+    
     constructor() ERC721("TurkPunk", "TP") {
         addPayee(0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2, "artist", 20);
         addPayee(0xCA35b7d915458EF540aDe6068dFe2F44E8fa733c, "developer", 40);
