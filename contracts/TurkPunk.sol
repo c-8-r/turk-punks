@@ -40,8 +40,13 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         _;
     }
     
-    modifier onlyUser() {
-        require(tx.origin == msg.sender, "contracts are not allowed");
+    modifier onlyUser(address _sender) {
+        //require(tx.origin == msg.sender, "contracts are not allowed");
+        uint32 size;
+        assembly {
+            size := extcodesize(_sender)
+        }
+        require(size == 0, "contracts are not allowed");
         _;
     }
     
@@ -62,7 +67,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         }
     }
     
-    function mint(uint256 amount) external payable onlyOpen nonReentrant onlyUser {
+    function mint(uint256 amount) external payable onlyOpen nonReentrant onlyUser(msg.sender) {
         require(msg.value >= mintPrice.mul(amount), "not enough ethers");
         for (uint256 i = 0; i < amount; i++) {
             uint256 id = tokenIdCounter.current();
@@ -94,7 +99,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         return address(this).balance;
     }
 
-    function withdrawAllToPayees() external nonReentrant onlyOwner onlyUser {
+    function withdrawAllToPayees() external nonReentrant onlyOwner onlyUser(msg.sender) {
         uint256 totalBalance = getBalance();
         for (uint256 i = 0; i < payees.length; i++) {
             Payee memory payee = payees[i];
@@ -103,7 +108,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         }
     }
     
-    function withdrawToPayees(uint256 _amount) internal onlyUser {
+    function withdrawToPayees(uint256 _amount) internal onlyUser(msg.sender) {
         for (uint256 i = 0; i < payees.length; i++) {
             Payee memory payee = payees[i];
             address payable to = payable(payee.wallet);
