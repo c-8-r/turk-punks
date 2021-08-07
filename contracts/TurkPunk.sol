@@ -21,11 +21,20 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
     uint256 public mintPrice = 1 ether;
     
     bool public openForSale = false;
+
+    struct Payee {
+        address wallet;
+        string role;
+        uint256 percentage;
+    }
+    
+    Payee[] public payees;
     
     modifier onlyOpen() {
         require(openForSale, "Sales are not opened");
         _;
     }
+    
     modifier onlyNotOpen() {
         require(!openForSale, "Sales are opened");
         _;
@@ -69,12 +78,28 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         return tokensByAddress[_address];
     }
     
+    function addPayee(address wallet, string memory role, uint256 percentage) internal onlyNotOpen onlyOwner nonReentrant {
+        Payee memory payee = Payee(wallet, role, percentage);
+        payees.push(payee);
+    }
     
-    
-    
+    function getBalance() public view returns(uint) {
+        return address(this).balance;
+    }
+
+    function withdrawToPayees() external nonReentrant onlyOwner {
+        uint256 totalBalance = getBalance();
+        for (uint256 i = 0; i < payees.length; i++) {
+            Payee memory payee = payees[i];
+            address payable to = payable(payee.wallet);
+            to.transfer(totalBalance.mul(payee.percentage).div(100));    
+        }
+    }
     
     constructor() ERC721("TurkPunk", "TP") {
-
+        addPayee(0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2, "artist", 20);
+        addPayee(0xCA35b7d915458EF540aDe6068dFe2F44E8fa733c, "developer", 40);
+        addPayee(0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db, "daddy", 40);
     }
     
     
