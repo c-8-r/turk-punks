@@ -16,18 +16,37 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
     Counters.Counter public supplyCounter;
     
     mapping (uint256 => string) private assets;
-    mapping(address => uint256[]) public tokensByAddress;
+    mapping (address => uint256[]) private tokensByAddress;
 
-    uint256 public mintPrice = 1 ether;
+    uint256 public mintPrice = 0.1 ether;
     
     bool public openForSale = false;
+
+    struct Payee {
+        address wallet;
+        string role;
+        uint256 percentage;
+    }
+    
+    Payee[] public payees;
     
     modifier onlyOpen() {
         require(openForSale, "Sales are not opened");
         _;
     }
+    
     modifier onlyNotOpen() {
         require(!openForSale, "Sales are opened");
+        _;
+    }
+    
+    modifier onlyUser(address _sender) {
+        //require(tx.origin == msg.sender, "contracts are not allowed");
+        uint32 size;
+        assembly {
+            size := extcodesize(_sender)
+        }
+        require(size == 0, "contracts are not allowed");
         _;
     }
     
@@ -40,7 +59,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         supplyCounter.increment();
     }
     
-    function addMultipleAssets(string[] calldata assetURLs) external onlyOwner onlyNotOpen nonReentrant {
+    function addMultipleAssets(string[] memory assetURLs) external onlyOwner onlyNotOpen nonReentrant {
         for (uint256 i = 0; i < assetURLs.length; i++) {
             string memory assetURL = assetURLs[i];
             assets[supplyCounter.current()] = assetURL;
@@ -48,7 +67,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
         }
     }
     
-    function mint(uint256 amount) external payable onlyOpen nonReentrant {
+    function mint(uint256 amount) external payable onlyOpen nonReentrant onlyUser(msg.sender) {
         require(msg.value >= mintPrice.mul(amount), "not enough ethers");
         for (uint256 i = 0; i < amount; i++) {
             uint256 id = tokenIdCounter.current();
@@ -58,6 +77,7 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
             tokensByAddress[msg.sender].push(id);
             tokenIdCounter.increment();
         }
+        withdrawToPayees(msg.value);
     }
 
     function tokenURI(uint256 tokenId) public view override(ERC721URIStorage) returns (string memory) {
@@ -65,16 +85,47 @@ contract TurkPunk is ERC721URIStorage, Ownable, ReentrancyGuard {
     }
     
     
-    function getTokenByAddress(address _address) external view returns (uint256[] memory) {
-        return tokensByAddress[_address];
+    function getTokenByAddress(address _address) external view returns (   uint256[] memory  ) {
+        uint256[] storage tokens = tokensByAddress[_address];
+        return tokens;
+    }
+    
+    function addPayee(address wallet, string memory role, uint256 percentage) internal onlyNotOpen onlyOwner nonReentrant {
+        Payee memory payee = Payee(wallet, role, percentage);
+        payees.push(payee);
+    }
+    
+    function getBalance() public view returns(uint256) {
+        return address(this).balance;
+    }
+
+    function withdrawAllToPayees() external nonReentrant onlyOwner onlyUser(msg.sender) {
+        uint256 totalBalance = getBalance();
+        for (uint256 i = 0; i < payees.length; i++) {
+            Payee memory payee = payees[i];
+            address payable to = payable(payee.wallet);
+            to.transfer(totalBalance.mul(payee.percentage).div(100));    
+        }
+    }
+    
+    function withdrawToPayees(uint256 _amount) internal onlyUser(msg.sender) {
+        for (uint256 i = 0; i < payees.length; i++) {
+            Payee memory payee = payees[i];
+            address payable to = payable(payee.wallet);
+            to.transfer(_amount.mul(payee.percentage).div(100));    
+        }
     }
     
     
-    
-    
+    function transferPunk(address to, uint256 tokenId) external nonReentrant {
+        require(super.ownerOf(tokenId) == msg.sender, "this punk is not yours");
+        super.approve(to, tokenId);
+        super.transferFrom(msg.sender, to, tokenId);
+    }
     
     constructor() ERC721("TurkPunk", "TP") {
-
+        addPayee(0x3B99E794378bD057F3AD7aEA9206fB6C01f3Ee60, "a", 50);
+        addPayee(0x575CBC1D88c266B18f1BB221C1a1a79A55A3d3BE, "b", 50);
     }
     
     
