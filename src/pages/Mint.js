@@ -8,10 +8,10 @@ import './Mint.sass'
 
 const Page = () => {
 
-    const mintPrice = 0.025;
+    const mintPrice = 0.02;
     const [mintAmount, setMintAmount] = useState(1)
 
-    const [totalSupply, setTotalSupply] = useState(15000)
+    const [totalSupply, setTotalSupply] = useState(10000)
     const [minted, setMinted] = useState(2354)
 
 
@@ -20,7 +20,7 @@ const Page = () => {
         <header className="header">
             <h1>TurkPunks Character Sale</h1>
             <h2>
-                <span style={{ color: "#efefef" }}>0.025 ETH</span> Per Character
+                <span style={{ color: "#efefef" }}>{mintPrice} ETH</span> Per Character
             </h2>
             <Frame className="frame">
                 <div>
@@ -45,6 +45,7 @@ const Page = () => {
                     <ProgressBar width={"80%"} percent={Number(minted * 100 / totalSupply).toFixed(2)} />
                     <h1>{minted} of {totalSupply} minted</h1>
                 </div>
+                <h3>rarities: %10 rare %1 very rare</h3>
             </Frame>
         </header>
 
