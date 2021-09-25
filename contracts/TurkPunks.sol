@@ -189,7 +189,15 @@ contract TurkPunks is ERC721, Ownable, ReentrancyGuard {
                                                             )
                                                         )
                                                     ),
-                                                    '"}'
+                                                    '", "attributes": [{"trait_type": "Head", "value": "',
+                                                    heads[headIndex].name,
+                                                    '"}, {"trait_type": "Eyes", "value": "',
+                                                    eyes[eyeIndex].name,
+                                                    '"}, {"trait_type": "Hair", "value": "',
+                                                    hairs[hairIndex].name,
+                                                    '"}, {"trait_type": "Mouth", "value": "',
+                                                    mouths[mouthIndex].name,
+                                                    '"} ]  }'
                                                 )
                                             )
                                         ),
