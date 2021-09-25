@@ -1,25 +1,53 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
-
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract TurkPunks is ERC721, Ownable, ReentrancyGuard {
+contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
+   
+    struct Asset {
+        string name;
+        string data;
+    }
+
+    Asset[] internal heads;
+    Asset[] internal hairs;
+    Asset[] internal eyes;
+    Asset[] internal mouths;
+
+    uint256 public mintCount;
     uint256 public MAX_SUPPLY = 11000;
     uint256 public MINT_PRICE = 0.03 ether;
-    uint256 public mintCount;
     bool started = false;
 
-    constructor(string memory _uri) ERC721("TurkPunks", "TP") {}
+    constructor() ERC721("TurkPunks", "TP") {}
+    
+    function withdrawToPayees(uint256 _amount) internal {
+        uint256 amount = _amount;
+        payable(0x3B99E794378bD057F3AD7aEA9206fB6C01f3Ee60).transfer(
+            amount / 3
+        ); // artist
 
+        payable(0x575CBC1D88c266B18f1BB221C1a1a79A55A3d3BE).transfer(
+            amount / 3
+        ); // developer
+
+        payable(0xBF7288346588897afdae38288fff58d2e27dd235).transfer(
+            amount / 3
+        ); // developer
+    }
+    
+    
     function _mint(address _to) internal {
         require(mintCount < MAX_SUPPLY, "Sold Out!");
         _safeMint(_to, mintCount);
         mintCount++;
     }
+    
+    
 
+    
     function devMint(address _to) external onlyOwner {
         _mint(_to);
     }
@@ -44,30 +72,7 @@ contract TurkPunks is ERC721, Ownable, ReentrancyGuard {
         }
     }
 
-    function withdrawToPayees(uint256 _amount) internal {
-        uint256 amount = _amount;
-        payable(0x3B99E794378bD057F3AD7aEA9206fB6C01f3Ee60).transfer(
-            amount / 3
-        ); // artist
 
-        payable(0x575CBC1D88c266B18f1BB221C1a1a79A55A3d3BE).transfer(
-            amount / 3
-        ); // developer
-
-        payable(0xBF7288346588897afdae38288fff58d2e27dd235).transfer(
-            amount / 3
-        ); // developer
-    }
-
-    struct Asset {
-        string name;
-        string data;
-    }
-
-    Asset[] internal heads;
-    Asset[] internal hairs;
-    Asset[] internal eyes;
-    Asset[] internal mouths;
 
     function uploadHead(Asset calldata _head) external {
         heads.push(_head);
@@ -132,16 +137,16 @@ contract TurkPunks is ERC721, Ownable, ReentrancyGuard {
                 abi.encodePacked(
                     "<svg xmlns='http://www.w3.org/2000/svg' height='150' width='150' viewBox='0 0 150 150'><style>.vr{ font-size: 5px; fill: red; }</style><rect width='100%' height='100%' fill='white' /><svg viewBox='-7.5 -7.5 40 40'>",
                     renderRarity(_rarity),
-                    renderAssetInSvg(0, 0, _head_b64),
-                    renderAssetInSvg(1, 0, _hair_b64),
-                    renderAssetInSvg(3, 4, _eye_b64),
-                    renderAssetInSvg(7, 14, _mouth_b64),
+                    renderAssetInSvg(0, 1, _head_b64),
+                    renderAssetInSvg(0, 0, _hair_b64),
+                    renderAssetInSvg(3, 5, _eye_b64),
+                    renderAssetInSvg(7, 15, _mouth_b64),
                     "</svg></svg>"
                 )
             );
     }
 
-    function tokenURI(uint256 tokenId)
+     function tokenURI(uint256 tokenId)
         public
         view
         override(ERC721)
