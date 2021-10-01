@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
+
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-
-
 interface IRenderer {
-    function renderImage( uint8 _b, uint8 _e, uint8 _m, uint8 _h, uint8 _r ) external view returns (string memory);
+    function renderImage( uint _b, uint _e, uint _m, uint _h, uint _r ) external view returns (string memory);
+}
+
+contract DNAEncoder {
+    
+    uint16 dna;
+
+    
 }
 
 contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
@@ -18,106 +24,101 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
     
     address rendererContract = address(0);
     
-    string description = "";
+    string description = "*100% Punk*";
+    string base_url = "";
+    string image_format = ".png";
+    
     
     string[] internal bodies = [
-        "White Cartoon Head.png",
-        "Beige Cartoon Head.png",
-        "Standard Head.png",
-        "Zombie Head.png",
-        "Cartoon Head.png"
+        "White Cartoon Head",
+        "Beige Cartoon Head",
+        "Standard Head",
+        "Zombie Head",
+        "Cartoon Head"
     ];
     string[] internal eyes = [
-        "Green Eyes.png",
-        "Melancholic Blue Eyes.png",
-        "Green Thin Glasses.png",
-        "Snake Eyes.png",
-        "Red Glasses.png",
-        "Purple Glasses.png",
-        "Angry Black Eyes.png",
-        "Yellow Bee Eyes.png",
-        "Curious Blue Eyes.png",
-        "Red Irregular Glasses.png",
-        "Flaring Eyes.png",
-        "Black Eyes.png",
-        "Purple Cool Glasses.png",
-        "Red Eyes.png"
+        "Green Eyes",
+        "Melancholic Blue Eyes",
+        "Green Thin Glasses",
+        "Snake Eyes",
+        "Red Glasses",
+        "Purple Glasses",
+        "Angry Black Eyes",
+        "Yellow Bee Eyes",
+        "Curious Blue Eyes",
+        "Red Irregular Glasses",
+        "Flaring Eyes",
+        "Black Eyes",
+        "Purple Cool Glasses",
+        "Red Eyes"
     ];
     string[] internal mouths = [
-        "Mop Specialist Mouth.png",
-        "Orange Beard.png",
-        "Blower Mouth.png",
-        "Tongue Down.png",
-        "Standard Mouth.png",
-        "Horny Mouth.png",
-        "Cool Beard.png",
-        "Sad Mouth.png",
-        "Tongue Left Down.png",
-        "Demonic Beard.png",
-        "Mouth With Lipstick.png",
-        "Small Mouth With Mustache.png",
-        "Cute Mouth.png",
-        "Tricky Mouth.png"
+        "Mop Specialist Mouth",
+        "Orange Beard",
+        "Blower Mouth",
+        "Tongue Down",
+        "Standard Mouth",
+        "Horny Mouth",
+        "Cool Beard",
+        "Sad Mouth",
+        "Tongue Left Down",
+        "Demonic Beard",
+        "Mouth With Lipstick",
+        "Small Mouth With Mustache",
+        "Cute Mouth",
+        "Tricky Mouth"
     ];
     string[] internal hairs = [
-        "Blonde Long Hair.png",
-        "Brown Short Hair.png",
-        "Black Shitty Hair.png",
-        "Purple Hair.png",
-        "Activist Berfo Hair.png",
-        "Purple Messy Hair.png",
-        "Blue Hat.png",
-        "Purple Curly Hair.png",
-        "Green Hair.png",
-        "Brown Hair.png",
-        "Red Hedgehog Hair.png",
-        "Red Curly Hair.png",
-        "Turquoise Hair.png",
-        "Blonde Hedgehog Hair.png",
-        "Red Long Hair.png",
-        "Blue Hair.png",
-        "Yellow Hair.png",
-        "Blonde Short Hair.png"
+        "Blonde Long Hair",
+        "Brown Short Hair",
+        "Black Shitty Hair",
+        "Purple Hair",
+        "Activist Berfo Hair",
+        "Purple Messy Hair",
+        "Blue Hat",
+        "Purple Curly Hair",
+        "Green Hair",
+        "Brown Hair",
+        "Red Hedgehog Hair",
+        "Red Curly Hair",
+        "Turquoise Hair",
+        "Blonde Hedgehog Hair",
+        "Red Long Hair",
+        "Blue Hair",
+        "Yellow Hair",
+        "Blonde Short Hair"
     ];
-
-    bytes5[] internal dnaArray;
-
-    function createDna(
-        uint8 _b, // body id
-        uint8 _e, // eye id
-        uint8 _m, // mouth id
-        uint8 _h, // hair id
-        uint8 _r // rarity | 0: usual, 1: rare, 2: very rare
-    ) internal pure returns (bytes5) {
-        return
-            bytes5(
-                bytes.concat(
-                    bytes1(_b),
-                    bytes1(_e),
-                    bytes1(_m),
-                    bytes1(_h),
-                    bytes1(_r)
-                )
-            );
+    
+    
+    struct DNA {
+        uint body;
+        uint eye;
+        uint mouth;
+        uint hair;
+        uint rarity;
     }
+    
 
-    function parseDna(bytes5 _dna)
-        internal
-        pure
-        returns (
-            uint8, // body id
-            uint8, // eye id
-            uint8, // mouth id
-            uint8, // hair id
-            uint8 // rarity id
-        )
-    {
-        return (
-            uint8(_dna[0]),
-            uint8(_dna[1]),
-            uint8(_dna[2]),
-            uint8(_dna[3]),
-            uint8(_dna[4])
+    uint16[] internal dnaArray;
+
+    function encodeDna(uint body, uint eye, uint mouth, uint hair, uint rarity) public pure returns(uint16) {
+        return uint16(body + (eye * 5) + (mouth * 5 * 14) + (hair * 5 * 14 * 14) + (rarity * 5 * 14 * 14 * 18));
+    }
+    
+    
+
+    function decodeDna(uint16 _dna) public pure returns (DNA memory){
+        uint rarity = _dna / (5 * 14 * 14 * 18);
+        uint hair = (_dna % (5 * 14 * 14 * 18)) / (5 * 14 * 14);
+        uint mouth = (_dna % (5 * 14 * 14)) / (5 * 14);
+        uint eye = (_dna % (5 * 14)) / 5;
+        uint body = (_dna % 5);
+        return DNA(
+            body,
+            eye,
+            mouth,
+            hair,
+            rarity
         );
     }
 
@@ -129,24 +130,34 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
     function setDescription(string calldata _description) external onlyOwner {
         description = _description;
     }
+    
+    function setBaseUrl(string calldata _base_url) external onlyOwner {
+        base_url = _base_url;
+    }
+    
+    function setImageFormat(string calldata _image_format) external onlyOwner {
+        image_format = _image_format;
+    }
+
 
     function renderImage(
-        uint8 _b,
-        uint8 _e,
-        uint8 _m,
-        uint8 _h,
-        uint8 _r
+        uint _b,
+        uint _e,
+        uint _m,
+        uint _h,
+        uint _r
     ) internal view returns (string memory) {
         
         if(rendererContract == address(0)) {
             return string(
                     abi.encodePacked(
+                        base_url,
                         toString(_b),
                         toString(_e),
                         toString(_m),
                         toString(_h),
                         toString(_r),
-                        ".png"
+                        image_format
                     )
                 );
         } else {
@@ -165,15 +176,15 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
         
         require(_exists(tokenId), "uri query for nonexistent token");
         
-        bytes5 dna = dnaArray[tokenId];
-        (uint8 b, uint8 e, uint8 m, uint8 h, uint8 r) = parseDna(dna);
+        uint16 dna = dnaArray[tokenId];
+        DNA memory _dna = decodeDna(dna);
         string memory rarity;
 
-        if (r == 0) {
+        if (_dna.rarity == 0) {
             rarity = "Usual";
-        } else if (r == 1) {
+        } else if (_dna.rarity == 1) {
             rarity = "Rare";
-        } else if (r == 2) {
+        } else if (_dna.rarity == 2) {
             rarity = "Very Rare";
         }
 
@@ -184,19 +195,19 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
                     encode(
                         bytes(
                             abi.encodePacked(
-                                '{"name": "TurkPunk #',
+                                '{"name": "#',
                                 toString(tokenId),
-                                '", "description": "tp 100% ipfs."',
+                                '", "description": "',description,'"',
                                 ', "image": "',
-                                renderImage(b, e, m, h, r),
+                                renderImage(_dna.body, _dna.eye, _dna.mouth, _dna.hair, _dna.rarity),
                                 '", "attributes": [{"trait_type": "Head", "value": "',
-                                bodies[b],
+                                bodies[_dna.body],
                                 '"}, {"trait_type": "Eyes", "value": "',
-                                eyes[e],
+                                eyes[_dna.eye],
                                 '"}, {"trait_type": "Hair", "value": "',
-                                hairs[h],
+                                hairs[_dna.hair],
                                 '"}, {"trait_type": "Mouth", "value": "',
-                                mouths[m],
+                                mouths[_dna.mouth],
                                 '"}, {"trait_type": "Rarity", "value": "',
                                 rarity,
                                 '"} ]  }'
@@ -239,14 +250,14 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
         }
     }
 
-    function incrementOrderArray(bytes5[] calldata _supply) external onlyOwner {
+    function incrementOrderArray(uint16[] calldata _supply) external onlyOwner {
         for (uint256 i; i < _supply.length; i++) {
             dnaArray.push(_supply[i]);
         }
         MAX_SUPPLY = dnaArray.length;
     }
 
-    constructor() ERC721("TurkPunks", "TP") onlyOwner {}
+    constructor() ERC721("Turk Punks", "TP") onlyOwner {}
 
     function withdrawToPayees(uint256 _amount) internal {
         uint256 amount = _amount;
