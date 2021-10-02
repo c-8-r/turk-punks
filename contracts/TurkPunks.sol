@@ -9,12 +9,6 @@ interface IRenderer {
     function renderImage( uint _b, uint _e, uint _m, uint _h, uint _r ) external view returns (string memory);
 }
 
-contract DNAEncoder {
-    
-    uint16 dna;
-
-    
-}
 
 contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
     bool public started = false;
