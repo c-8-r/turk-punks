@@ -6,23 +6,29 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IRenderer {
-    function renderImage( uint _b, uint _e, uint _m, uint _h, uint _r ) external view returns (string memory);
+    function renderImage(
+        uint256 _b,
+        uint256 _e,
+        uint256 _m,
+        uint256 _h,
+        uint256 _r
+    ) external view returns (string memory);
 }
-
 
 contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
     bool public started = false;
     uint256 public mintCount;
     uint256 public MAX_SUPPLY = 0;
     uint256 public MINT_PRICE = 0.03 ether;
-    
+
     address rendererContract = address(0);
-    
+    address donationAddress =
+        address(0x50D80101e43db03740ad27F2aD6bC919012dc1f9);
+
     string description = "*100% Punk*";
     string base_url = "";
     string image_format = ".png";
-    
-    
+
     string[] internal bodies = [
         "White Cartoon Head",
         "Beige Cartoon Head",
@@ -82,75 +88,72 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
         "Yellow Hair",
         "Blonde Short Hair"
     ];
-    
-    
+
     struct DNA {
-        uint body;
-        uint eye;
-        uint mouth;
-        uint hair;
-        uint rarity;
+        uint256 body;
+        uint256 eye;
+        uint256 mouth;
+        uint256 hair;
+        uint256 rarity;
     }
-    
 
     uint16[] internal dnaArray;
 
-    function encodeDna(uint body, uint eye, uint mouth, uint hair, uint rarity) public pure returns(uint16) {
-        return uint16(body + (eye * 5) + (mouth * 5 * 14) + (hair * 5 * 14 * 14) + (rarity * 5 * 14 * 14 * 18));
-    }
-    
-    
-
-    function decodeDna(uint16 _dna) public pure returns (DNA memory){
-        uint rarity = _dna / (5 * 14 * 14 * 18);
-        uint hair = (_dna % (5 * 14 * 14 * 18)) / (5 * 14 * 14);
-        uint mouth = (_dna % (5 * 14 * 14)) / (5 * 14);
-        uint eye = (_dna % (5 * 14)) / 5;
-        uint body = (_dna % 5);
-        return DNA(
-            body,
-            eye,
-            mouth,
-            hair,
-            rarity
-        );
+    function encodeDna(
+        uint256 body,
+        uint256 eye,
+        uint256 mouth,
+        uint256 hair,
+        uint256 rarity
+    ) internal pure returns (uint16) {
+        return
+            uint16(
+                body +
+                    (eye * 5) +
+                    (mouth * 5 * 14) +
+                    (hair * 5 * 14 * 14) +
+                    (rarity * 5 * 14 * 14 * 18)
+            );
     }
 
-    
+    function decodeDna(uint16 _dna) internal pure returns (DNA memory) {
+        uint256 rarity = _dna / (5 * 14 * 14 * 18);
+        uint256 hair = (_dna % (5 * 14 * 14 * 18)) / (5 * 14 * 14);
+        uint256 mouth = (_dna % (5 * 14 * 14)) / (5 * 14);
+        uint256 eye = (_dna % (5 * 14)) / 5;
+        uint256 body = (_dna % 5);
+        return DNA(body, eye, mouth, hair, rarity);
+    }
+
     function setRendererContract(address _address) external onlyOwner {
         rendererContract = _address;
     }
-    
+
     function setDescription(string calldata _description) external onlyOwner {
         description = _description;
     }
-    
+
     function setBaseUrl(string calldata _base_url) external onlyOwner {
         base_url = _base_url;
     }
-    
+
     function setImageFormat(string calldata _image_format) external onlyOwner {
         image_format = _image_format;
     }
 
-
     function renderImage(
-        uint _b,
-        uint _e,
-        uint _m,
-        uint _h,
-        uint _r
+        uint256 _b,
+        uint256 _e,
+        uint256 _m,
+        uint256 _h,
+        uint256 _r
     ) internal view returns (string memory) {
-        
-        if(rendererContract == address(0)) {
-            return string(
+        if (rendererContract == address(0)) {
+            return
+                string(
                     abi.encodePacked(
                         base_url,
-                        toString(_b),
-                        toString(_e),
-                        toString(_m),
-                        toString(_h),
-                        toString(_r),
+                        toString(encodeDna(_b, _e, _m, _h, _r)),
                         image_format
                     )
                 );
@@ -160,22 +163,20 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
         }
     }
 
-
     function tokenURI(uint256 tokenId)
         public
         view
         override(ERC721)
         returns (string memory)
     {
-        
         require(_exists(tokenId), "uri query for nonexistent token");
-        
+
         uint16 dna = dnaArray[tokenId];
         DNA memory _dna = decodeDna(dna);
         string memory rarity;
 
         if (_dna.rarity == 0) {
-            rarity = "Usual";
+            rarity = "Common";
         } else if (_dna.rarity == 1) {
             rarity = "Rare";
         } else if (_dna.rarity == 2) {
@@ -191,9 +192,17 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
                             abi.encodePacked(
                                 '{"name": "#',
                                 toString(tokenId),
-                                '", "description": "',description,'"',
+                                '", "description": "',
+                                description,
+                                '"',
                                 ', "image": "',
-                                renderImage(_dna.body, _dna.eye, _dna.mouth, _dna.hair, _dna.rarity),
+                                renderImage(
+                                    _dna.body,
+                                    _dna.eye,
+                                    _dna.mouth,
+                                    _dna.hair,
+                                    _dna.rarity
+                                ),
                                 '", "attributes": [{"trait_type": "Head", "value": "',
                                 bodies[_dna.body],
                                 '"}, {"trait_type": "Eyes", "value": "',
@@ -255,17 +264,16 @@ contract TurkPunks is ERC721, ReentrancyGuard, Ownable {
 
     function withdrawToPayees(uint256 _amount) internal {
         uint256 amount = _amount;
+
         payable(0x3B99E794378bD057F3AD7aEA9206fB6C01f3Ee60).transfer(
-            amount / 3
+            (amount / 100) * 40
         ); // artist
 
         payable(0x575CBC1D88c266B18f1BB221C1a1a79A55A3d3BE).transfer(
-            amount / 3
+            (amount / 100) * 40
         ); // developer
 
-        payable(0xBF7288346588897afdae38288fff58d2e27dd235).transfer(
-            amount / 3
-        ); // developer
+        payable(donationAddress).transfer((amount / 100) * 20);
     }
 
     function toString(uint256 value) internal pure returns (string memory) {
